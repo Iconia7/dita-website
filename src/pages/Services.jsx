@@ -5,6 +5,7 @@ import { Code, Laptop, Users, Briefcase, GraduationCap, Wifi, ArrowRight, Zap, T
 import { motion } from 'framer-motion';
 import { fadeIn } from '../utils/animations';
 import Reveal from '../components/common/Reveal';
+import SEO from '../components/common/SEO';
 
 const servicesData = [
   {
@@ -42,6 +43,10 @@ const servicesData = [
 const Services = () => {
   return (
     <div className="bg-slate-50 min-h-screen flex flex-col font-sans overflow-x-hidden">
+      <SEO 
+  title="Our Services - Daystar Information Technology Associaation" 
+  description="Explore DITA's student programs: Coding Bootcamps (Flutter, React), Peer Mentorship, Hackathons, and Career Development workshops designed to make you job-ready."
+/>
       <Navbar />
       
       {/* ================= HERO SECTION ================= */}

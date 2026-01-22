@@ -6,10 +6,15 @@ import { motion } from 'framer-motion';
 import { fadeIn } from '../utils/animations';
 import Reveal from '../components/common/Reveal';
 import { Users, Award, Star } from 'lucide-react';
+import SEO from '../components/common/SEO';
 
 const Leadership = () => {
   return (
     <div className="bg-slate-50 min-h-screen flex flex-col font-sans overflow-x-hidden">
+      <SEO 
+  title="Leadership & Team - Daystar Information Technology Association" 
+  description="Meet the dedicated team behind DITA. Get to know the University Patrons, the Dean, and the Student Executive Council driving technological excellence on campus."
+/>
       <Navbar />
 
       {/* ================= HERO SECTION ================= */}

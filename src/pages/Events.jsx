@@ -7,6 +7,7 @@ import RegistrationModal from '../components/modals/RegistrationModal';
 import { motion } from 'framer-motion';
 import { fadeIn } from '../utils/animations';
 import { Calendar, Filter, Sparkles } from 'lucide-react';
+import SEO from '../components/common/SEO';
 
 const Events = () => {
   // State for the Registration Modal
@@ -23,6 +24,10 @@ const Events = () => {
 
   return (
     <div className="bg-slate-50 min-h-screen flex flex-col font-sans overflow-x-hidden">
+      <SEO 
+  title="Events & Hackathons - Daystar Information Technology Association" 
+  description="Upcoming tech events, workshops, and coding competitions at Daystar University."
+/>
       <Navbar />
 
       {/* ================= HERO SECTION ================= */}

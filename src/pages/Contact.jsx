@@ -5,10 +5,15 @@ import { motion } from 'framer-motion';
 import { fadeIn } from '../utils/animations';
 import Reveal from '../components/common/Reveal';
 import GreenCTA from '../components/sections/GreenCTA';
+import SEO from '../components/common/SEO';
 
 const Contact = () => {
   return (
     <div className="bg-slate-50 min-h-screen flex flex-col font-sans overflow-x-hidden">
+      <SEO 
+  title="Contact Us - Daystar Information Technology Association" 
+  description="Get in touch with the Daystar Information Technology Association. Reach out for membership inquiries, partnership proposals, or visit us at the Athi River Campus ICT Building."
+/>
       <Navbar />
 
       {/* ================= HERO SECTION ================= */}

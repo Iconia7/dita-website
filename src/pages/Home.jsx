@@ -12,6 +12,7 @@ import { fadeIn } from '../utils/animations';
 import Reveal from '../components/common/Reveal';
 import { ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import SEO from '../components/common/SEO';
 
 const Home = () => {
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -26,6 +27,10 @@ const Home = () => {
 
   return (
     <div className="bg-slate-50 min-h-screen flex flex-col font-sans overflow-x-hidden">
+      <SEO 
+        title="Home - Daystar Information Technology Associaation" 
+        description="Join DITA, Daystar University's premier tech community. We host hackathons, coding bootcamps, and peer mentorship programs."
+      />
       <Navbar />
       
       {/* ================= HERO SECTION ================= */}

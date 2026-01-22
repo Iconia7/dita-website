@@ -4,10 +4,15 @@ import { Target, Lightbulb, Heart, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { fadeIn } from '../utils/animations';
 import Reveal from '../components/common/Reveal';
+import SEO from '../components/common/SEO';
 
 const About = () => {
   return (
     <div className="bg-slate-50 min-h-screen flex flex-col font-sans overflow-x-hidden">
+      <SEO 
+  title="About Us - Daystar Information Technology Association" 
+  description="Discover the story behind DITA. Learn about our mission to foster innovation, our values, and how we are bridging the gap between academia and the tech industry at Daystar University."
+/>
       <Navbar />
 
       {/* ================= HERO SECTION ================= */}
