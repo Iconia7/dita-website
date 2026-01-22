@@ -1,0 +1,30 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply font-sans text-slate-700 antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold text-slate-900;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply px-6 py-2.5 bg-brand-accent text-white rounded-full font-medium 
+    hover:bg-teal-600 transition-all duration-300 shadow-lg shadow-teal-500/30;
+  }
+  
+  .btn-outline {
+    @apply px-6 py-2.5 border border-white text-white rounded-full font-medium 
+    hover:bg-white/10 transition-all duration-300;
+  }
+
+  .container-custom {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+}
