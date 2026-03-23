@@ -38,6 +38,21 @@ const ElectionPortal = ({ isVerified, onVerify }) => {
     }
   }, [step]);
 
+  // Auto-skip logic: Automatically jump over positions already voted for
+  useEffect(() => {
+    if (step === 3) {
+      const isAlreadyVoted = votedPositions.includes(POSITION_ORDER[currentPositionIndex]);
+      if (isAlreadyVoted) {
+        const nextIdx = POSITION_ORDER.findIndex((pos, idx) => idx > currentPositionIndex && !votedPositions.includes(pos));
+        if (nextIdx !== -1) {
+          setCurrentPositionIndex(nextIdx);
+        } else {
+          setStep(4); // All remaining positions already voted for
+        }
+      }
+    }
+  }, [currentPositionIndex, votedPositions, step]);
+
   const handleSendOTP = async (e) => {
     e.preventDefault();
     if (!email.endsWith('@daystar.ac.ke')) {
@@ -65,7 +80,7 @@ const ElectionPortal = ({ isVerified, onVerify }) => {
       onVerify(token);
       
       // Resume logic: Fetch existing votes and jump to correct step
-      const votedPos = await getMyVotes();
+      const votedPos = await getMyVotes(token);
       setVotedPositions(votedPos);
       
       const nextIndex = POSITION_ORDER.findIndex(pos => !votedPos.includes(pos));
