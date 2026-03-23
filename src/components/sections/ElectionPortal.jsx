@@ -1,13 +1,26 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, CheckCircle2, Lock, Vote, Info, AlertCircle } from 'lucide-react';
-import { sendOTP, verifyOTP, castVote, getCandidates } from '../../utils/electionApi';
+import { sendOtp, verifyOtp, getCandidates, castVote, getMyVotes } from '../utils/electionApi';
 import { useState, useEffect } from 'react';
+
+const POSITION_ORDER = [
+  'President',
+  'Vice President',
+  'Treasurer',
+  'Resources Manager',
+  'Organizing Secretary',
+  'Public Relations Officer',
+  'Secretary',
+  'DICT Representative'
+];
 
 const ElectionPortal = ({ isVerified, onVerify }) => {
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
-  const [step, setStep] = useState(1); // 1: Email, 2: OTP, 3: Voting
+  const [step, setStep] = useState(1); // 1: Email, 2: OTP, 3: Multi-Step Voting, 4: Success
   const [candidates, setCandidates] = useState([]);
+  const [currentPositionIndex, setCurrentPositionIndex] = useState(0);
+  const [votedPositions, setVotedPositions] = useState([]); // Track positions voted for
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -34,7 +47,7 @@ const ElectionPortal = ({ isVerified, onVerify }) => {
     setError('');
     setLoading(true);
     try {
-      await sendOTP(email);
+      await sendOtp(email);
       setStep(2);
     } catch (err) {
       setError(err.message);
@@ -48,9 +61,20 @@ const ElectionPortal = ({ isVerified, onVerify }) => {
     setError('');
     setLoading(true);
     try {
-      await verifyOTP(email, otp);
-      setStep(3);
-      onVerify();
+      const token = await verifyOtp(email, otp);
+      onVerify(token);
+      
+      // Resume logic: Fetch existing votes and jump to correct step
+      const votedPos = await getMyVotes();
+      setVotedPositions(votedPos);
+      
+      const nextIndex = POSITION_ORDER.findIndex(pos => !votedPos.includes(pos));
+      if (nextIndex === -1 && votedPos.length > 0) {
+        setStep(4); // Voted for all positions already
+      } else {
+        setCurrentPositionIndex(nextIndex !== -1 ? nextIndex : 0);
+        setStep(3);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -58,18 +82,32 @@ const ElectionPortal = ({ isVerified, onVerify }) => {
     }
   };
 
-  const handleVote = async (candidateId) => {
+  const handleVote = async (candidateId, position) => {
     setLoading(true);
     setError('');
     try {
       await castVote(candidateId);
-      alert('Your vote has been cast successfully!');
+      const newVoted = [...votedPositions, position];
+      setVotedPositions(newVoted);
+      
+      // Advance to next position or end
+      const nextIndex = POSITION_ORDER.findIndex((pos, idx) => idx > currentPositionIndex && !newVoted.includes(pos));
+      
+      if (nextIndex !== -1) {
+        setCurrentPositionIndex(nextIndex);
+      } else {
+        setStep(4); // All done!
+      }
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
+
+  // Group candidates by the official order
+  const currentPositionName = POSITION_ORDER[currentPositionIndex];
+  const currentCandidates = candidates.filter(c => c.position === currentPositionName);
 
   // Remove the hardcoded candidates list
 
@@ -190,56 +228,97 @@ const ElectionPortal = ({ isVerified, onVerify }) => {
               animate={{ opacity: 1 }}
               className="space-y-8"
             >
-              <div className="bg-green-50 p-6 rounded-2xl border border-green-100 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white">
-                    <CheckCircle2 size={24} />
-                  </div>
-                  <div>
-                    <p className="text-green-800 font-bold">Successfully Verified</p>
-                    <p className="text-green-700 text-sm">You are eligible to vote in the current election.</p>
-                  </div>
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div>
+                   <h2 className="text-3xl font-bold text-slate-900">{currentPositionName}</h2>
+                   <p className="text-slate-500">Select your preferred candidate for this role.</p>
                 </div>
-                <div className="hidden sm:block text-right">
-                  <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Authenticated As</p>
-                  <p className="text-slate-600 font-medium">{email}</p>
+                <div className="bg-brand-primary/10 px-4 py-2 rounded-xl border border-brand-primary/10">
+                   <p className="text-brand-primary font-bold text-sm">Position {currentPositionIndex + 1} of {POSITION_ORDER.length}</p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {candidates.map((candidate) => (
-                  <motion.div
-                    key={candidate.id}
-                    whileHover={{ y: -5 }}
-                    className="bg-white p-6 rounded-3xl shadow-lg border border-slate-100 flex gap-6 items-center"
+              {/* Progress Bar */}
+              <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                <motion.div 
+                  initial={{ width: 0 }}
+                  animate={{ width: `${((currentPositionIndex + 1) / POSITION_ORDER.length) * 100}%` }}
+                  className="h-full bg-brand-dark transition-all duration-500"
+                ></motion.div>
+              </div>
+
+              {currentCandidates.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {currentCandidates.map((candidate) => (
+                    <motion.div
+                      key={candidate.id}
+                      whileHover={{ y: -5 }}
+                      className="bg-white p-6 rounded-3xl shadow-lg border border-slate-100 flex flex-col items-center text-center"
+                    >
+                      <img src={candidate.image_url || 'https://via.placeholder.com/150'} alt={candidate.name} className="w-32 h-32 rounded-2xl object-cover mb-4 shadow-md" />
+                      <div>
+                        <h3 className="text-xl font-bold text-slate-900 mb-2">{candidate.name}</h3>
+                        <p className="text-slate-500 text-sm line-clamp-3 mb-6 italic">"{candidate.manifesto}"</p>
+                        <button
+                          onClick={() => handleVote(candidate.id, currentPositionName)}
+                          disabled={loading}
+                          className="w-full flex items-center justify-center gap-2 bg-brand-dark text-white hover:bg-brand-accent px-6 py-3 rounded-xl transition-all font-bold disabled:opacity-50"
+                        >
+                          <Vote size={20} />
+                          {loading ? 'Voting...' : `Vote for ${candidate.name}`}
+                        </button>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-slate-50 p-12 rounded-3xl text-center border-2 border-dashed border-slate-200">
+                  <p className="text-slate-500 mb-4 font-medium">No candidates registered for this position.</p>
+                  <button 
+                    onClick={() => {
+                      if (currentPositionIndex < POSITION_ORDER.length - 1) {
+                        setCurrentPositionIndex(currentPositionIndex + 1);
+                      } else {
+                        setStep(4);
+                      }
+                    }}
+                    className="text-brand-primary font-bold hover:underline"
                   >
-                    <img src={candidate.image_url || 'https://via.placeholder.com/150'} alt={candidate.name} className="w-24 h-24 rounded-2xl object-cover" />
-                    <div className="flex-grow">
-                      <p className="text-brand-accent text-xs font-bold uppercase tracking-widest mb-1">{candidate.position}</p>
-                      <h3 className="text-xl font-bold text-slate-900 mb-2">{candidate.name}</h3>
-                      <p className="text-slate-500 text-sm line-clamp-2 mb-4 italic">"{candidate.manifesto}"</p>
-                      <button
-                        onClick={() => handleVote(candidate.id)}
-                        disabled={loading}
-                        className="flex items-center gap-2 bg-brand-primary/10 hover:bg-brand-primary hover:text-white text-brand-primary px-4 py-2 rounded-xl transition-all font-bold text-sm disabled:opacity-50"
-                      >
-                        <Vote size={18} />
-                        {loading ? 'Voting...' : 'Cast Vote'}
-                      </button>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-
-              <div className="bg-brand-dark text-white p-8 rounded-3xl shadow-2xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-brand-accent/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-                <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
-                  <div>
-                    <h3 className="text-2xl font-bold mb-2">Transparency & Security</h3>
-                    <p className="text-slate-300">All votes are recorded anonymously and encrypted using RSA-2048. Double voting is strictly prohibited and verified at the database level.</p>
-                  </div>
-                  <Lock size={64} className="text-brand-accent opacity-20" />
+                    Skip to Next Position →
+                  </button>
                 </div>
+              )}
+
+              {error && (
+                <div className="flex items-center gap-2 text-red-500 text-sm font-medium justify-center">
+                  <AlertCircle size={16} />
+                  {error}
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {step === 4 && (
+            <motion.div
+              key="step4"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-white p-8 md:p-16 rounded-3xl shadow-2xl border border-slate-100 text-center flex flex-col items-center"
+            >
+              <div className="w-24 h-24 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-8 animate-bounce">
+                <CheckCircle2 size={48} />
+              </div>
+              <h2 className="text-4xl font-bold text-slate-900 mb-4">Ballot Cast Successfully!</h2>
+              <p className="text-slate-600 text-lg mb-8 max-w-md">
+                Your votes for all {POSITION_ORDER.length} positions have been securely recorded. Thank you for participating in the DITA association elections.
+              </p>
+              <div className="flex flex-wrap justify-center gap-4">
+                <button 
+                  onClick={() => window.location.reload()}
+                  className="bg-brand-dark text-white px-8 py-4 rounded-xl font-bold hover:bg-brand-accent transition-all"
+                >
+                  Return to Home
+                </button>
               </div>
             </motion.div>
           )}

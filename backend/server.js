@@ -83,6 +83,19 @@ app.post('/api/auth/verify-otp', (req, res) => {
 });
 
 // 3. Cast Vote
+app.get('/api/my-votes', async (req, res) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'Unauthorized' });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const result = await pool.query('SELECT position FROM votes WHERE voter_email = $1', [decoded.email]);
+    res.json(result.rows.map(r => r.position));
+  } catch (err) {
+    res.status(401).json({ error: 'Invalid token' });
+  }
+});
+
 app.post('/api/vote', async (req, res) => {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) return res.status(401).json({ error: 'Unauthorized' });

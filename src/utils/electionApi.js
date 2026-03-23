@@ -34,6 +34,15 @@ export const verifyOTP = async (email, otp) => {
   return token;
 };
 
+export const getMyVotes = async () => {
+    const token = localStorage.getItem('voter_token');
+    const response = await fetch(`${API_URL}/my-votes`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!response.ok) throw new Error('Failed to fetch your votes');
+    return response.json();
+};
+
 export const castVote = async (candidateId) => {
   const token = localStorage.getItem('voter_token');
   const response = await fetch(`${API_URL}/vote`, {
