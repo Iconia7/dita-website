@@ -14,8 +14,8 @@ const ElectionHero = () => {
         />
       </div>
 
-      <div className="container-custom relative z-10">
-        <div className="max-w-3xl">
+      <div className="container-custom relative z-10 text-center flex flex-col items-center">
+        <div className="max-w-3xl mx-auto">
           <motion.div 
             variants={fadeIn("down", 0.2)} 
             initial="hidden" 
@@ -42,17 +42,17 @@ const ElectionHero = () => {
             variants={fadeIn("up", 0.4)}
             initial="hidden"
             animate="show"
-            className="text-slate-300 text-lg mb-8"
+            className="text-slate-300 text-lg mb-8 max-w-2xl mx-auto"
           >
             Participate in the upcoming DITA Association General Elections. Our secure system ensures integrity, anonymity, and fairness through institutional email verification.
           </motion.p>
 
-          <div className="flex flex-wrap gap-4">
-             <div className="flex items-center gap-2 text-slate-300 bg-white/5 px-4 py-2 rounded-lg border border-white/10">
+          <div className="flex flex-wrap justify-center gap-4">
+             <div className="flex items-center gap-2 text-slate-300 bg-white/5 px-4 py-2 rounded-lg border border-white/10 backdrop-blur-sm">
                 <UserCheck size={18} className="text-brand-accent" />
                 <span className="text-sm font-medium">Verification Required</span>
              </div>
-             <div className="flex items-center gap-2 text-slate-300 bg-white/5 px-4 py-2 rounded-lg border border-white/10">
+             <div className="flex items-center gap-2 text-slate-300 bg-white/5 px-4 py-2 rounded-lg border border-white/10 backdrop-blur-sm">
                 <ShieldCheck size={18} className="text-brand-accent" />
                 <span className="text-sm font-medium">End-to-End Encryption</span>
              </div>

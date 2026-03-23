@@ -91,15 +91,20 @@ app.post('/api/vote', async (req, res) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const { candidateId } = req.body;
 
-    // Check if already voted
-    const check = await pool.query('SELECT * FROM votes WHERE voter_email = $1', [decoded.email]);
+    // 1. Get candidate's position
+    const candidateRes = await pool.query('SELECT position FROM candidates WHERE id = $1', [candidateId]);
+    if (candidateRes.rows.length === 0) return res.status(404).json({ error: 'Candidate not found' });
+    const position = candidateRes.rows[0].position;
+
+    // 2. Check if already voted for THIS position
+    const check = await pool.query('SELECT * FROM votes WHERE voter_email = $1 AND position = $2', [decoded.email, position]);
     if (check.rows.length > 0) {
-      return res.status(403).json({ error: 'You have already voted' });
+      return res.status(403).json({ error: `You have already voted for ${position}` });
     }
 
-    // Insert vote
-    await pool.query('INSERT INTO votes (voter_email, candidate_id) VALUES ($1, $2)', [decoded.email, candidateId]);
-    res.json({ message: 'Vote cast successfully' });
+    // 3. Insert vote with position
+    await pool.query('INSERT INTO votes (voter_email, candidate_id, position) VALUES ($1, $2, $3)', [decoded.email, candidateId, position]);
+    res.json({ message: `Vote cast for ${position} successfully` });
   } catch (err) {
     console.error(err);
     res.status(401).json({ error: 'Invalid token' });

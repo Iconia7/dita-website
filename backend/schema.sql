@@ -10,9 +10,11 @@ CREATE TABLE IF NOT EXISTS candidates (
 
 CREATE TABLE IF NOT EXISTS votes (
     id SERIAL PRIMARY KEY,
-    voter_email VARCHAR(255) UNIQUE NOT NULL,
+    voter_email VARCHAR(255) NOT NULL,
     candidate_id INTEGER REFERENCES candidates(id),
-    casted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    position VARCHAR(255) NOT NULL,
+    casted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(voter_email, position)
 );
 
 -- 2. Insert Sample Candidates (You can change these)

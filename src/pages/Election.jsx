@@ -4,6 +4,7 @@ import Footer from '../components/common/Footer';
 import SEO from '../components/common/SEO';
 import ElectionHero from '../components/sections/ElectionHero';
 import ElectionPortal from '../components/sections/ElectionPortal';
+import GreenCTA from '../components/sections/GreenCTA';
 
 const Election = () => {
   const [isVoterVerified, setIsVoterVerified] = useState(false);
@@ -24,7 +25,15 @@ const Election = () => {
         />
       </main>
 
-      <Footer />
+      {/* Standard Site Footer with Floating CTA */}
+      <div className="relative mt-20">
+        <div className="bg-brand-primary pt-32 pb-10 relative">
+          <div className="absolute top-0 left-0 w-full -translate-y-1/2 px-4 z-10">
+            <GreenCTA />
+          </div>
+          <Footer />
+        </div>
+      </div>
     </div>
   );
 };
