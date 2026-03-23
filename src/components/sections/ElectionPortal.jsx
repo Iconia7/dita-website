@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, CheckCircle2, Lock, Vote, Info, AlertCircle } from 'lucide-react';
-import { sendOtp, verifyOtp, getCandidates, castVote, getMyVotes } from '../utils/electionApi';
+import { sendOtp, verifyOtp, getCandidates, castVote, getMyVotes } from '../../utils/electionApi';
 import { useState, useEffect } from 'react';
 
 const POSITION_ORDER = [
