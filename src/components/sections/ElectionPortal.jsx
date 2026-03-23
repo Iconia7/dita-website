@@ -1,7 +1,8 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, CheckCircle2, Lock, Vote, Info, AlertCircle } from 'lucide-react';
-import { sendOtp, verifyOtp, getCandidates, castVote, getMyVotes } from '../../utils/electionApi';
+import { sendOtp, verifyOtp, getCandidates, castVote, getMyVotes, bulkUploadCandidates } from '../../utils/electionApi';
 import { useState, useEffect } from 'react';
+import { Upload, Key, FileText } from 'lucide-react';
 
 const POSITION_ORDER = [
   'President',
@@ -23,6 +24,53 @@ const ElectionPortal = ({ isVerified, onVerify }) => {
   const [votedPositions, setVotedPositions] = useState([]); // Track positions voted for
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminKey, setAdminKey] = useState('');
+  const [uploadStatus, setUploadStatus] = useState('');
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('admin') === 'true') {
+      setIsAdmin(true);
+    }
+  }, []);
+
+  const handleBulkUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file || !adminKey) {
+      setError('Please provide both the CSV file and the Admin Secret Key.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const text = event.target.result;
+        const rows = text.split('\n').filter(r => r.trim());
+        const header = rows.shift().split(',').map(h => h.trim().toLowerCase());
+        
+        const candidatesData = rows.map(row => {
+          const values = row.split(',').map(v => v.trim());
+          const c = {};
+          header.forEach((h, i) => {
+            if (values[i]) c[h] = values[i];
+          });
+          return c;
+        });
+
+        setLoading(true);
+        setUploadStatus('Uploading...');
+        await bulkUploadCandidates(candidatesData, adminKey);
+        setUploadStatus('Success! Candidates updated.');
+        setTimeout(() => window.location.reload(), 1500);
+      } catch (err) {
+        setError('Upload failed: ' + err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    reader.readAsText(file);
+  };
 
   useEffect(() => {
     if (step === 3) {
@@ -130,6 +178,65 @@ const ElectionPortal = ({ isVerified, onVerify }) => {
     <section className="py-20 container-custom">
       <div className="max-w-4xl mx-auto">
         <AnimatePresence mode="wait">
+          {/* Admin Bulk Upload Panel */}
+          {isAdmin && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-12 bg-slate-900 text-white p-8 rounded-3xl shadow-2xl border border-slate-800"
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-brand-accent/20 rounded-lg flex items-center justify-center text-brand-accent">
+                  <Upload size={20} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold">Admin: Bulk Candidate Upload</h2>
+                  <p className="text-slate-400 text-sm">Replace all candidates quickly via CSV.</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                  <label className="block text-sm font-medium text-slate-400 mb-2 flex items-center gap-2">
+                    <Key size={14} /> Admin Secret Key
+                  </label>
+                  <input
+                    type="password"
+                    value={adminKey}
+                    onChange={(e) => setAdminKey(e.target.value)}
+                    className="w-full bg-slate-800 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-brand-accent outline-none transition-all"
+                    placeholder="Enter secret key..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-400 mb-2 flex items-center gap-2">
+                    <FileText size={14} /> Candidates CSV File
+                  </label>
+                  <input
+                    type="file"
+                    accept=".csv"
+                    onChange={handleBulkUpload}
+                    disabled={loading}
+                    className="w-full bg-slate-800 border-none rounded-xl px-4 py-2 file:mr-4 file:py-1 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-brand-accent file:text-slate-900 hover:file:bg-white cursor-pointer"
+                  />
+                </div>
+              </div>
+
+              {uploadStatus && (
+                <p className={`text-sm font-bold ${uploadStatus.includes('Success') ? 'text-green-400' : 'text-brand-accent'}`}>
+                  {uploadStatus}
+                </p>
+              )}
+              
+              <div className="mt-4 p-4 bg-slate-800/50 rounded-xl border border-slate-700">
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  <strong>CSV Format:</strong> <code>name,position,manifesto,image_url</code><br/>
+                  *The first row must be the header. This will overwrite all existing candidates!
+                </p>
+              </div>
+            </motion.div>
+          )}
+
           {step === 1 && (
             <motion.div
               key="step1"

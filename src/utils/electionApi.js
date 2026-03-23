@@ -59,3 +59,18 @@ export const castVote = async (candidateId) => {
   }
   return response.json();
 };
+export const bulkUploadCandidates = async (candidates, adminKey) => {
+    const response = await fetch(`${API_URL}/admin/candidates/bulk`, {
+        method: 'POST',
+        headers: { 
+            'Content-Type': 'application/json',
+            'X-Internal-Key': adminKey
+        },
+        body: JSON.stringify({ candidates })
+    });
+    if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Bulk upload failed');
+    }
+    return response.json();
+};

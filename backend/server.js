@@ -149,5 +149,38 @@ app.post('/api/vote', async (req, res) => {
   }
 });
 
+// 4. Admin: Bulk Upload Candidates
+app.post('/api/admin/candidates/bulk', async (req, res) => {
+  const secret = req.headers['x-internal-key'];
+  if (secret !== process.env.INTERNAL_API_KEY) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+
+  const { candidates } = req.body;
+  if (!Array.isArray(candidates)) {
+    return res.status(400).json({ error: 'Invalid data format' });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('TRUNCATE TABLE candidates CASCADE');
+    for (const c of candidates) {
+      await client.query(
+        'INSERT INTO candidates (name, position, manifesto, image_url) VALUES ($1, $2, $3, $4)',
+        [c.name, c.position, c.manifesto, c.image_url]
+      );
+    }
+    await client.query('COMMIT');
+    res.json({ message: `Successfully uploaded ${candidates.length} candidates.` });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error(err);
+    res.status(500).json({ error: 'Bulk upload failed' });
+  } finally {
+    client.release();
+  }
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
