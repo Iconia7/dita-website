@@ -6,7 +6,7 @@ export const getCandidates = async () => {
   return response.json();
 };
 
-export const sendOTP = async (email) => {
+export const sendOtp = async (email) => {
   const response = await fetch(`${API_URL}/auth/send-otp`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -19,7 +19,7 @@ export const sendOTP = async (email) => {
   return response.json();
 };
 
-export const verifyOTP = async (email, otp) => {
+export const verifyOtp = async (email, otp) => {
   const response = await fetch(`${API_URL}/auth/verify-otp`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
