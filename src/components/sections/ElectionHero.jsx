@@ -6,11 +6,12 @@ const ElectionHero = () => {
   return (
     <section className="relative bg-brand-dark pt-32 pb-20 overflow-hidden">
       <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-gradient-to-r from-brand-dark via-brand-dark/95 to-brand-primary/20 opacity-90"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-brand-dark via-brand-dark/95 to-brand-primary/40 opacity-90"></div>
         <img 
-          src="https://images.unsplash.com/photo-1540910419892-f39a64f1521a?q=80&w=2070&auto=format&fit=crop" 
+          src="https://images.unsplash.com/photo-1540910419892-f39a64f1521a?auto=format&fit=crop&q=80&w=2000" 
           alt="Election Background" 
           className="w-full h-full object-cover"
+          onError={(e) => e.target.style.display = 'none'}
         />
       </div>
 
