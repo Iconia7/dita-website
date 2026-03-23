@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import Navbar from '../components/common/Navbar';
 import Footer from '../components/common/Footer';
-import { Mail, Phone, MapPin, Send, MessageSquare, Clock } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, MessageSquare, Clock, CheckCircle2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { fadeIn } from '../utils/animations';
 import Reveal from '../components/common/Reveal';
@@ -8,6 +9,18 @@ import GreenCTA from '../components/sections/GreenCTA';
 import SEO from '../components/common/SEO';
 
 const Contact = () => {
+  const [status, setStatus] = useState('idle'); // idle, loading, success, error
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setStatus('loading');
+    // Simulate API call
+    setTimeout(() => {
+      setStatus('success');
+      setTimeout(() => setStatus('idle'), 3000);
+    }, 2000);
+  };
+
   return (
     <div className="bg-slate-50 min-h-screen flex flex-col font-sans overflow-x-hidden">
       <SEO 
@@ -135,7 +148,7 @@ const Contact = () => {
               <h2 className="text-3xl font-bold text-slate-900 mb-2">Send a Message</h2>
               <p className="text-slate-500 mb-8">Fill out the form below and our team will get back to you.</p>
 
-              <form className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-6">
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="group">
                       <label className="block text-sm font-bold text-slate-700 mb-2 group-focus-within:text-brand-accent transition-colors">First Name</label>
@@ -179,9 +192,16 @@ const Contact = () => {
                     <textarea rows="4" className="w-full px-4 py-3 bg-slate-50 rounded-xl border-2 border-transparent focus:bg-white focus:border-brand-accent outline-none transition-all font-medium text-slate-900 resize-none" placeholder="How can we help you?"></textarea>
                  </div>
 
-                 <button type="button" className="w-full bg-brand-dark text-white py-4 rounded-xl font-bold text-lg hover:bg-brand-accent hover:-translate-y-1 hover:shadow-lg transition-all flex items-center justify-center gap-2 group">
-                    Send Message 
-                    <Send size={20} className="group-hover:translate-x-1 transition-transform" />
+                 <button 
+                  type="submit" 
+                  disabled={status === 'loading' || status === 'success'}
+                  className={`w-full py-4 rounded-xl font-bold text-lg transition-all flex items-center justify-center gap-2 group ${
+                    status === 'success' ? 'bg-green-600' : 'bg-brand-dark hover:bg-brand-accent hover:-translate-y-1 hover:shadow-lg'
+                  } text-white`}
+                 >
+                    {status === 'loading' ? 'Sending...' : status === 'success' ? 'Message Sent!' : 'Send Message'}
+                    {status === 'idle' && <Send size={20} className="group-hover:translate-x-1 transition-transform" />}
+                    {status === 'success' && <CheckCircle2 size={20} />}
                  </button>
               </form>
            </div>

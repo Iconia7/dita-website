@@ -7,6 +7,7 @@ import Services from './pages/Services';
 import Events from './pages/Events';
 import Leadership from './pages/Leadership';
 import Contact from './pages/Contact';
+import Election from './pages/Election';
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
         <Route path="/events" element={<Events />} />
         <Route path="/leadership" element={<Leadership />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/elections" element={<Election />} />
       </Routes>
     </Router>
   );
