@@ -45,6 +45,31 @@ app.post('/api/auth/send-otp', async (req, res) => {
     return res.status(400).json({ error: 'Invalid email domain. Use @daystar.ac.ke' });
   }
 
+  // 1. Membership Verification (Bridge to Django Backend)
+  if (process.env.DJANGO_API_URL) {
+    try {
+      const verifyUrl = `${process.env.DJANGO_API_URL}/api/verify-voter/?email=${email}`;
+      const resp = await fetch(verifyUrl, {
+        headers: { 'X-Internal-Key': process.env.INTERNAL_API_KEY }
+      });
+      
+      if (!resp.ok) {
+        console.error('Membership API error:', resp.status);
+      } else {
+        const data = await resp.json();
+        if (!data.is_member) {
+          return res.status(403).json({ 
+            error: data.message || 'Only active, paid-up DITA members can participate in elections. Please renew your membership in the DITA App.' 
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Membership verification connection failed:', err.message);
+      // In case of bridge failure, we log it. Decide whether to block or allow.
+      // For now, we continue but log the error.
+    }
+  }
+
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
   otps.set(email, { otp, expires: Date.now() + 600000 }); // 10 mins
 
