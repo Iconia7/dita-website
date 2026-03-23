@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, CheckCircle2, Lock, Vote, Info, AlertCircle } from 'lucide-react';
 import { sendOTP, verifyOTP, castVote, getCandidates } from '../../utils/electionApi';
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 const ElectionPortal = ({ isVerified, onVerify }) => {
   const [email, setEmail] = useState('');
@@ -28,7 +28,7 @@ const ElectionPortal = ({ isVerified, onVerify }) => {
   const handleSendOTP = async (e) => {
     e.preventDefault();
     if (!email.endsWith('@daystar.ac.ke')) {
-      setError('Please use your official @student.daystar.ac.ke email.');
+      setError('Please use your official @daystar.ac.ke email.');
       return;
     }
     setError('');
