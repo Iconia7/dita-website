@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://dita.co.ke/sitemap.xml
