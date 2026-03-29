@@ -53,7 +53,7 @@ export default function Navbar() {
           : "bg-transparent py-5",
       )}
     >
-      <div className="container flex items-center justify-between">
+      <div className="container mx-auto flex items-center justify-between px-6">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
           <Image
@@ -75,8 +75,18 @@ export default function Navbar() {
                     asChild
                     className={cn(
                       navigationMenuTriggerStyle(),
-                      "bg-transparent",
+                      "bg-transparent hover:bg-transparent focus:bg-transparent",
+                      // Unscrolled: white text over dark hero
+                      !scrolled &&
+                        "text-white/90 hover:text-white hover:bg-white/10 focus:text-white",
+                      // Scrolled: normal theme colors
+                      scrolled && "text-foreground hover:text-foreground",
+                      // Active link
                       pathname === link.path &&
+                        !scrolled &&
+                        "text-white font-medium underline underline-offset-4",
+                      pathname === link.path &&
+                        scrolled &&
                         "text-foreground font-medium underline underline-offset-4",
                     )}
                   >
@@ -87,16 +97,32 @@ export default function Navbar() {
             </NavigationMenuList>
           </NavigationMenu>
 
-          <Button asChild size="sm" className="ml-4">
+          {/* Join Now button */}
+          <Button
+            asChild
+            size="sm"
+            className={cn(
+              "ml-4 transition-all",
+              !scrolled
+                ? "bg-slate-900 text-white hover:bg-slate-800 border-0"
+                : "",
+            )}
+          >
             <Link href="/contact">Join Now</Link>
           </Button>
         </div>
 
-        {/* Mobile Nav — Sheet */}
+        {/* Mobile Menu Button */}
         <div className="md:hidden">
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn(
+                  !scrolled && "text-white hover:bg-white/10 hover:text-white",
+                )}
+              >
                 <Menu className="h-5 w-5" />
                 <span className="sr-only">Toggle menu</span>
               </Button>
