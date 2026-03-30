@@ -41,7 +41,7 @@ export default function HeroSection() {
 
           {/* Headline - Transform should be white not dark */}
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-white leading-[1.1]">
-            Innovate. <span className="text-white/90">Transform.</span> Lead.
+            Innovate. <span className="text-black/90">Transform.</span> Lead.
           </h1>
 
           {/* Subtitle */}
