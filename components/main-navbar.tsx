@@ -28,9 +28,7 @@ const navLinks = [
   { name: "Home", path: "/" },
   { name: "About", path: "/about" },
   { name: "Services", path: "/services" },
-  { name: "Events", path: "/events" },
   { name: "Leadership", path: "/leadership" },
-  { name: "Elections", path: "/elections" },
 ];
 
 export default function Navbar() {
@@ -162,7 +160,7 @@ export default function Navbar() {
                 <Separator className="my-2" />
 
                 <Button asChild className="w-full" size="sm">
-                  <Link href="/contact" onClick={() => setOpen(false)}>
+                  <Link href="/" onClick={() => setOpen(false)}>
                     Join Now
                   </Link>
                 </Button>
