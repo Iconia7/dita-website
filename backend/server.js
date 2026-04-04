@@ -65,18 +65,23 @@ app.post('/api/auth/send-otp', async (req, res) => {
       });
       
       if (!resp.ok) {
-        console.error('Verification API error:', resp.status);
-      } else {
-        const data = await resp.json();
-        if (!data.is_user) {
-          return res.status(403).json({ 
-            error: 'Student not found in the DITA App database. Please download and register in the DITA App first to vote.' 
-          });
-        }
+        // If the bridge is down or unauthorized, we stop here for security.
+        return res.status(503).json({ 
+          error: 'Student verification service is temporarily unavailable. Please try again later.' 
+        });
+      }
+
+      const data = await resp.json();
+      if (!data.is_user) {
+        return res.status(403).json({ 
+          error: 'Student not found in the DITA App database. Please download and register in the DITA App first to vote.' 
+        });
       }
     } catch (err) {
       console.error('Verification connection failed:', err.message);
-      // In case of bridge failure, we log it.
+      return res.status(503).json({ 
+        error: 'Unable to reach verification service. Please ensure you are a registered DITA App user.' 
+      });
     }
   }
 
