@@ -489,7 +489,10 @@ const ElectionPortal = ({ isVerified, onVerify }) => {
 
               <div className="mt-12 flex justify-center">
                 <button 
-                  onClick={() => window.location.reload()}
+                  onClick={() => {
+                    localStorage.removeItem('voter_token');
+                    window.location.href = '/';
+                  }}
                   className="bg-slate-100 text-slate-600 px-8 py-3 rounded-xl font-bold hover:bg-slate-200 transition-all text-sm"
                 >
                   Sign Out & Finish
