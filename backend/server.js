@@ -6,7 +6,14 @@ const { Pool } = require('pg');
 require('dotenv').config();
 
 const app = express();
-app.use(cors());
+
+const allowedOrigin = process.env.FRONTEND_URL || 'http://localhost:5173';
+app.use(cors({
+  origin: allowedOrigin,
+  methods: ['GET', 'POST'],
+  credentials: true
+}));
+
 app.use(express.json());
 
 const pool = new Pool({
@@ -40,34 +47,53 @@ app.get('/api/candidates', async (req, res) => {
 
 // 1. Send OTP
 app.post('/api/auth/send-otp', async (req, res) => {
-  const { email } = req.body;
-  if (!email.endsWith('@daystar.ac.ke')) {
-    return res.status(400).json({ error: 'Invalid email domain. Use @daystar.ac.ke' });
+  const { email, admissionNumber } = req.body;
+  if (!email || !email.endsWith('@daystar.ac.ke')) {
+    return res.status(400).json({ error: 'Invalid email domain. Use your @daystar.ac.ke student email.' });
   }
 
-  // 1. Membership Verification (Bridge to Django Backend)
+  if (!admissionNumber) {
+    return res.status(400).json({ error: 'Admission Number is required.' });
+  }
+
+  // 1. App User Verification (Bridge to Django Backend)
   if (process.env.DJANGO_API_URL) {
     try {
-      const verifyUrl = `${process.env.DJANGO_API_URL}/api/verify-voter/?email=${email}`;
+      const verifyUrl = `${process.env.DJANGO_API_URL}/api/verify-voter/?admission_number=${admissionNumber}`;
       const resp = await fetch(verifyUrl, {
         headers: { 'X-Internal-Key': process.env.INTERNAL_API_KEY }
       });
       
       if (!resp.ok) {
-        console.error('Membership API error:', resp.status);
+        console.error('Verification API error:', resp.status);
       } else {
         const data = await resp.json();
-        if (!data.is_member) {
+        if (!data.is_user) {
           return res.status(403).json({ 
-            error: data.message || 'Only active, paid-up DITA members can participate in elections. Please renew your membership in the DITA App.' 
+            error: 'Student not found in the DITA App database. Please download and register in the DITA App first to vote.' 
           });
         }
       }
     } catch (err) {
-      console.error('Membership verification connection failed:', err.message);
-      // In case of bridge failure, we log it. Decide whether to block or allow.
-      // For now, we continue but log the error.
+      console.error('Verification connection failed:', err.message);
+      // In case of bridge failure, we log it.
     }
+  }
+
+  // 2. Check if already finished (Optional info for frontend)
+  let alreadyFinished = false;
+  try {
+    const votalbePositionsCountMatch = await pool.query(`SELECT COUNT(DISTINCT position) as count FROM candidates`);
+    const totalVotalbePositions = parseInt(votalbePositionsCountMatch.rows[0].count);
+    
+    const userVotesCountMatch = await pool.query(`SELECT COUNT(DISTINCT position) as count FROM votes WHERE voter_email = $1`, [email]);
+    const userVotesCount = parseInt(userVotesCountMatch.rows[0].count);
+    
+    if (userVotesCount >= totalVotalbePositions && totalVotalbePositions > 0) {
+      alreadyFinished = true;
+    }
+  } catch (err) {
+    console.error('Finished check failed:', err.message);
   }
 
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -86,7 +112,7 @@ app.post('/api/auth/send-otp', async (req, res) => {
               <p style="color: #64748b; font-size: 14px;">This code will expire in 10 minutes. If you didn't request this, please ignore this email.</p>
             </div>`,
     });
-    res.json({ message: 'OTP sent' });
+    res.json({ message: 'OTP sent', alreadyFinished });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to send email' });
@@ -146,6 +172,54 @@ app.post('/api/vote', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(401).json({ error: 'Invalid token' });
+  }
+});
+
+// 4. Get Election Results (Only for those who have finished voting)
+app.get('/api/results', async (req, res) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'Unauthorized' });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // 1. Check if the user has finished voting
+    // A voter is "finished" if they have voted for all positions that have candidates
+    const votalbePositionsCountMatch = await pool.query(`
+      SELECT COUNT(DISTINCT position) as count FROM candidates
+    `);
+    const totalVotalbePositions = parseInt(votalbePositionsCountMatch.rows[0].count);
+
+    const userVotesCountMatch = await pool.query(`
+      SELECT COUNT(DISTINCT position) as count FROM votes WHERE voter_email = $1
+    `, [decoded.email]);
+    const userVotesCount = parseInt(userVotesCountMatch.rows[0].count);
+
+    if (userVotesCount < totalVotalbePositions) {
+      return res.status(403).json({ 
+        error: 'Results are hidden until you finish casting all your votes.',
+        votesRemaining: totalVotalbePositions - userVotesCount 
+      });
+    }
+
+    // 2. Fetch Results
+    const results = await pool.query(`
+      SELECT 
+        c.id, 
+        c.name, 
+        c.position, 
+        c.image_url,
+        CAST(COUNT(v.id) AS INTEGER) as vote_count
+      FROM candidates c
+      LEFT JOIN votes v ON c.id = v.candidate_id
+      GROUP BY c.id, c.name, c.position, c.image_url
+      ORDER BY c.position, vote_count DESC
+    `);
+
+    res.json(results.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(401).json({ error: 'Invalid token or session expired' });
   }
 });
 

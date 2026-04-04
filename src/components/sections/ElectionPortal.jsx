@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, CheckCircle2, Lock, Vote, Info, AlertCircle } from 'lucide-react';
-import { sendOtp, verifyOtp, getCandidates, castVote, getMyVotes, bulkUploadCandidates } from '../../utils/electionApi';
+import { Mail, CheckCircle2, Lock, Vote, Info, AlertCircle, BarChart3, RefreshCw } from 'lucide-react';
+import { sendOtp, verifyOtp, getCandidates, castVote, getMyVotes, bulkUploadCandidates, getResults } from '../../utils/electionApi';
 import { useState, useEffect } from 'react';
 import { Upload, Key, FileText } from 'lucide-react';
 
@@ -17,6 +17,7 @@ const POSITION_ORDER = [
 
 const ElectionPortal = ({ isVerified, onVerify }) => {
   const [email, setEmail] = useState('');
+  const [admissionNumber, setAdmissionNumber] = useState('');
   const [otp, setOtp] = useState('');
   const [step, setStep] = useState(1); // 1: Email, 2: OTP, 3: Multi-Step Voting, 4: Success
   const [candidates, setCandidates] = useState([]);
@@ -33,7 +34,35 @@ const ElectionPortal = ({ isVerified, onVerify }) => {
     if (params.get('admin') === 'true') {
       setIsAdmin(true);
     }
+
+    // Session Recovery
+    const savedToken = localStorage.getItem('voter_token');
+    if (savedToken) {
+      resumeSession(savedToken);
+    }
   }, []);
+
+  const resumeSession = async (token) => {
+    setLoading(true);
+    try {
+      const votedPos = await getMyVotes(token);
+      setVotedPositions(votedPos);
+      onVerify(token);
+      
+      const nextIndex = POSITION_ORDER.findIndex(pos => !votedPos.includes(pos));
+      if (nextIndex === -1 && votedPos.length > 0) {
+        setStep(4);
+      } else {
+        setCurrentPositionIndex(nextIndex !== -1 ? nextIndex : 0);
+        setStep(3);
+      }
+    } catch (err) {
+      console.error('Session recovery failed:', err.message);
+      localStorage.removeItem('voter_token');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleBulkUpload = async (e) => {
     const file = e.target.files[0];
@@ -110,7 +139,10 @@ const ElectionPortal = ({ isVerified, onVerify }) => {
     setError('');
     setLoading(true);
     try {
-      await sendOtp(email);
+      const resp = await sendOtp(email, admissionNumber);
+      if (resp.alreadyFinished) {
+        setError('You have already cast all your votes. Signing in will take you directly to live results.');
+      }
       setStep(2);
     } catch (err) {
       setError(err.message);
@@ -256,23 +288,37 @@ const ElectionPortal = ({ isVerified, onVerify }) => {
               </div>
 
               <form onSubmit={handleSendOTP} className="space-y-6">
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">Student Email Address</label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-4 py-4 bg-slate-50 rounded-xl border-2 border-transparent focus:bg-white focus:border-brand-accent outline-none transition-all font-medium text-slate-900"
-                    placeholder="johndoe230000@daystar.ac.ke"
-                    required
-                  />
-                  {error && (
-                    <div className="flex items-center gap-2 mt-3 text-red-500 text-sm font-medium">
-                      <AlertCircle size={16} />
-                      {error}
-                    </div>
-                  )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Admission Number</label>
+                    <input
+                      type="text"
+                      value={admissionNumber}
+                      onChange={(e) => setAdmissionNumber(e.target.value)}
+                      className="w-full px-4 py-4 bg-slate-50 rounded-xl border-2 border-transparent focus:bg-white focus:border-brand-accent outline-none transition-all font-medium text-slate-900"
+                      placeholder="23-0000"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Student Email</label>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full px-4 py-4 bg-slate-50 rounded-xl border-2 border-transparent focus:bg-white focus:border-brand-accent outline-none transition-all font-medium text-slate-900"
+                      placeholder="johndoe@daystar.ac.ke"
+                      required
+                    />
+                  </div>
                 </div>
+
+                {error && (
+                  <div className="flex items-center gap-2 mt-3 text-red-500 text-sm font-medium">
+                    <AlertCircle size={16} />
+                    {error}
+                  </div>
+                )}
 
                 <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 flex items-start gap-3">
                   <Info className="text-blue-500 mt-1 shrink-0" size={18} />
@@ -425,21 +471,28 @@ const ElectionPortal = ({ isVerified, onVerify }) => {
               key="step4"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-white p-8 md:p-16 rounded-3xl shadow-2xl border border-slate-100 text-center flex flex-col items-center"
+              className="bg-white p-8 md:p-12 rounded-3xl shadow-2xl border border-slate-100"
             >
-              <div className="w-24 h-24 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-8 animate-bounce">
-                <CheckCircle2 size={48} />
+              <div className="text-center mb-12">
+                <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-6 mx-auto">
+                  <CheckCircle2 size={40} />
+                </div>
+                <h2 className="text-3xl font-bold text-slate-900 mb-4">Ballot Cast Successfully!</h2>
+                <p className="text-slate-600 max-w-md mx-auto">
+                  Thank you for participating. You can now view the live election results below.
+                </p>
               </div>
-              <h2 className="text-4xl font-bold text-slate-900 mb-4">Ballot Cast Successfully!</h2>
-              <p className="text-slate-600 text-lg mb-8 max-w-md">
-                Your votes for all {POSITION_ORDER.length} positions have been securely recorded. Thank you for participating in the DITA association elections.
-              </p>
-              <div className="flex flex-wrap justify-center gap-4">
+
+              <div className="border-t border-slate-100 pt-12">
+                <ResultsDashboard />
+              </div>
+
+              <div className="mt-12 flex justify-center">
                 <button 
                   onClick={() => window.location.reload()}
-                  className="bg-brand-dark text-white px-8 py-4 rounded-xl font-bold hover:bg-brand-accent transition-all"
+                  className="bg-slate-100 text-slate-600 px-8 py-3 rounded-xl font-bold hover:bg-slate-200 transition-all text-sm"
                 >
-                  Return to Home
+                  Sign Out & Finish
                 </button>
               </div>
             </motion.div>
@@ -447,6 +500,121 @@ const ElectionPortal = ({ isVerified, onVerify }) => {
         </AnimatePresence>
       </div>
     </section>
+  );
+};
+
+const ResultsDashboard = () => {
+  const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [lastUpdated, setLastUpdated] = useState(new Date());
+
+  const fetchResults = async () => {
+    try {
+      const data = await getResults();
+      setResults(data);
+      setLastUpdated(new Date());
+      setError('');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchResults();
+    const interval = setInterval(fetchResults, 30000); // Poll every 30 seconds
+    return () => clearInterval(interval);
+  }, []);
+
+  if (loading && results.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <div className="w-10 h-10 border-4 border-brand-primary border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="text-slate-500 font-medium">Loading live results...</p>
+      </div>
+    );
+  }
+
+  // Group by position
+  const groupedResults = results.reduce((acc, curr) => {
+    if (!acc[curr.position]) acc[curr.position] = [];
+    acc[curr.position].push(curr);
+    return acc;
+  }, {});
+
+  return (
+    <div className="space-y-12">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-slate-900">
+          <BarChart3 className="text-brand-primary" size={24} />
+          <h3 className="text-xl font-bold">Live Election Tally</h3>
+        </div>
+        <div className="flex items-center gap-2 text-slate-400 text-xs font-medium">
+          <RefreshCw size={12} className="animate-spin-slow" />
+          Last updated: {lastUpdated.toLocaleTimeString()}
+        </div>
+      </div>
+
+      {error && (
+        <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm font-medium flex items-center gap-2">
+          <AlertCircle size={16} />
+          {error}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 gap-10">
+        {Object.entries(groupedResults).map(([position, candidates]) => {
+          const totalVotes = candidates.reduce((sum, c) => sum + (c.vote_count || 0), 0);
+          
+          return (
+            <div key={position} className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h4 className="font-bold text-lg text-slate-800">{position}</h4>
+                <span className="text-slate-400 text-sm font-medium">{totalVotes} total votes</span>
+              </div>
+              
+              <div className="space-y-5">
+                {candidates.map((candidate) => {
+                  const percentage = totalVotes > 0 ? (candidate.vote_count / totalVotes) * 100 : 0;
+                  
+                  return (
+                    <div key={candidate.id} className="space-y-2">
+                      <div className="flex items-center justify-between text-sm mb-1">
+                        <div className="flex items-center gap-3">
+                          <img 
+                            src={candidate.image_url || 'https://via.placeholder.com/40'} 
+                            alt="" 
+                            className="w-8 h-8 rounded-full object-cover shadow-sm"
+                          />
+                          <span className="font-bold text-slate-700">{candidate.name}</span>
+                        </div>
+                        <div className="font-bold text-slate-900">
+                          {candidate.vote_count} <span className="text-slate-400 font-medium text-xs ml-1">({percentage.toFixed(1)}%)</span>
+                        </div>
+                      </div>
+                      <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${percentage}%` }}
+                          transition={{ duration: 1, ease: "easeOut" }}
+                          className={`h-full rounded-full ${
+                            percentage === Math.max(...candidates.map(c => totalVotes > 0 ? (c.vote_count / totalVotes) * 100 : 0)) 
+                            ? 'bg-brand-primary' 
+                            : 'bg-slate-300'
+                          }`}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 };
 

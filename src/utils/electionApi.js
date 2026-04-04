@@ -6,11 +6,11 @@ export const getCandidates = async () => {
   return response.json();
 };
 
-export const sendOtp = async (email) => {
+export const sendOtp = async (email, admissionNumber) => {
   const response = await fetch(`${API_URL}/auth/send-otp`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email }),
+    body: JSON.stringify({ email, admissionNumber }),
   });
   if (!response.ok) {
     const data = await response.json();
@@ -41,6 +41,18 @@ export const getMyVotes = async (providedToken = null) => {
     });
     if (!response.ok) throw new Error('Failed to fetch your votes');
     return response.json();
+};
+
+export const getResults = async () => {
+  const token = localStorage.getItem('voter_token');
+  const response = await fetch(`${API_URL}/results`, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  if (!response.ok) {
+    const data = await response.json();
+    throw new Error(data.error || 'Failed to fetch results');
+  }
+  return response.json();
 };
 
 export const castVote = async (candidateId) => {
