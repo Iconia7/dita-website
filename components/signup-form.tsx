@@ -2,11 +2,14 @@
 
 import * as z from "zod";
 import { useForm } from "@tanstack/react-form";
+import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
+import axios from "@/lib/axios";
+import { getErrorMessage } from "@/lib/utils";
 
 const formSchema = z.object({
   admno: z.string().min(1, "Admission number is required"),
@@ -14,7 +17,23 @@ const formSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
+type SignupPayload = z.infer<typeof formSchema>;
+
+async function createUser(payload: SignupPayload) {
+  const { data } = await axios.post("/accounts", payload);
+  return data;
+}
+
 export default function SignupForm() {
+  const {
+    mutate: signup,
+    isPending,
+    isError,
+    error,
+  } = useMutation({
+    mutationFn: createUser,
+  });
+
   const form = useForm({
     defaultValues: {
       admno: "",
@@ -25,7 +44,7 @@ export default function SignupForm() {
       onSubmit: formSchema,
     },
     onSubmit: async ({ value }) => {
-      console.log(value);
+      signup(value);
     },
   });
 
@@ -132,8 +151,12 @@ export default function SignupForm() {
             }}
           </form.Field>
 
-          <Button type="submit" className="w-full h-10">
-            Create Account
+          {isError && (
+            <p className="text-xs text-destructive">{getErrorMessage(error)}</p>
+          )}
+
+          <Button type="submit" className="w-full h-10" disabled={isPending}>
+            {isPending ? "Creating account…" : "Create Account"}
           </Button>
         </form>
 
