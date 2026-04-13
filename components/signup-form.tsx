@@ -10,6 +10,8 @@ import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 import axios from "@/lib/axios";
 import { getErrorMessage } from "@/lib/utils";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 const formSchema = z.object({
   admno: z.string().min(1, "Admission number is required"),
@@ -25,6 +27,8 @@ async function createUser(payload: SignupPayload) {
 }
 
 export default function SignupForm() {
+  const router = useRouter();
+
   const {
     mutate: signup,
     isPending,
@@ -32,6 +36,13 @@ export default function SignupForm() {
     error,
   } = useMutation({
     mutationFn: createUser,
+    onSuccess: () => {
+      toast.success("Account created successfully");
+      router.push("/");
+    },
+    onError: (err) => {
+      toast.error(getErrorMessage(err));
+    },
   });
 
   const form = useForm({
@@ -150,10 +161,6 @@ export default function SignupForm() {
               );
             }}
           </form.Field>
-
-          {isError && (
-            <p className="text-xs text-destructive">{getErrorMessage(error)}</p>
-          )}
 
           <Button type="submit" className="w-full h-10" disabled={isPending}>
             {isPending ? "Creating account…" : "Create Account"}
