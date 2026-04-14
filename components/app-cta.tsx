@@ -3,7 +3,7 @@ import { Smartphone } from "lucide-react";
 export default function AppCTA() {
   return (
     <div className="relative z-10 container mx-auto px-6 -mb-16">
-      <div className="rounded-2xl bg-gradient-to-r from-sky-500 to-cyan-400 px-10 py-10 flex flex-col md:flex-row items-center justify-between gap-8">
+      <div className="rounded-2xl bg-linear-to-r from-sky-500 to-cyan-400 px-10 py-10 flex flex-col md:flex-row items-center justify-between gap-8">
         {/* Left */}
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-white/80 text-xs font-bold uppercase tracking-widest">

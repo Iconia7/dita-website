@@ -7,11 +7,9 @@ import { Menu } from "lucide-react";
 import Image from "next/image";
 
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import {
   Sheet,
   SheetContent,
-  SheetHeader,
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
@@ -106,7 +104,7 @@ export default function Navbar() {
                 : "",
             )}
           >
-            <Link href="/contact">Join Now</Link>
+            <Link href="/signup">Join Now</Link>
           </Button>
         </div>
 
@@ -125,46 +123,50 @@ export default function Navbar() {
                 <span className="sr-only">Toggle menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-64">
-              <SheetHeader className="text-left">
-                <SheetTitle>
-                  <Image
-                    src="/logo.png"
-                    alt="DITA Logo"
-                    width={40}
-                    height={40}
-                    className="h-8 w-auto object-contain"
-                  />
-                </SheetTitle>
-              </SheetHeader>
+            <SheetContent side="right" className="w-70 p-0 flex flex-col">
+              <SheetTitle className="sr-only">Navigation menu</SheetTitle>
 
-              <Separator className="my-4" />
+              {/* Header */}
+              <div className="flex items-center px-6 h-16 border-b border-white/20 bg-linear-to-r from-sky-500 to-cyan-400">
+                <Image
+                  src="/logo.png"
+                  alt="DITA Logo"
+                  width={40}
+                  height={40}
+                  className="h-8 w-auto object-contain"
+                />
+              </div>
 
-              <nav className="flex flex-col gap-1">
+              {/* Links */}
+              <nav className="flex-1 flex flex-col gap-1 px-3 py-4">
                 {navLinks.map((link) => (
                   <Link
                     key={link.name}
                     href={link.path}
                     onClick={() => setOpen(false)}
                     className={cn(
-                      "rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
+                      "flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-colors",
                       pathname === link.path
-                        ? "bg-accent text-accent-foreground"
-                        : "text-muted-foreground",
+                        ? "bg-sky-50 text-sky-600 font-semibold"
+                        : "text-muted-foreground hover:bg-accent hover:text-foreground",
                     )}
                   >
                     {link.name}
                   </Link>
                 ))}
+              </nav>
 
-                <Separator className="my-2" />
-
-                <Button asChild className="w-full" size="sm">
-                  <Link href="/" onClick={() => setOpen(false)}>
+              {/* CTA */}
+              <div className="px-4 pb-8">
+                <Button
+                  asChild
+                  className="w-full bg-linear-to-r from-sky-500 to-cyan-400 text-white font-semibold hover:opacity-90"
+                >
+                  <Link href="/signup" onClick={() => setOpen(false)}>
                     Join Now
                   </Link>
                 </Button>
-              </nav>
+              </div>
             </SheetContent>
           </Sheet>
         </div>
