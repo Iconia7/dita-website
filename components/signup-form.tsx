@@ -29,12 +29,7 @@ async function createUser(payload: SignupPayload) {
 export default function SignupForm() {
   const router = useRouter();
 
-  const {
-    mutate: signup,
-    isPending,
-    isError,
-    error,
-  } = useMutation({
+  const { mutate: signup, isPending } = useMutation({
     mutationFn: createUser,
     onSuccess: () => {
       toast.success("Account created successfully");
