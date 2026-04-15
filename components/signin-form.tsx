@@ -2,42 +2,23 @@
 
 import * as z from "zod";
 import { useForm } from "@tanstack/react-form";
-import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
-import axios from "@/lib/axios";
 import { getErrorMessage } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { signIn } from "next-auth/react";
 
 const formSchema = z.object({
   admno: z.string().min(1, "Admission number is required"),
   password: z.string().min(1, "Password is required"),
 });
 
-type SignInPayload = z.infer<typeof formSchema>;
-
-async function signIn(payload: SignInPayload) {
-  const { data } = await axios.post("/auth/signin", payload);
-  return data;
-}
-
 export default function SignInForm() {
   const router = useRouter();
-
-  const { mutate: login, isPending } = useMutation({
-    mutationFn: signIn,
-    onSuccess: () => {
-      toast.success("Signed in successfully");
-      router.push("/");
-    },
-    onError: (err) => {
-      toast.error(getErrorMessage(err));
-    },
-  });
 
   const form = useForm({
     defaultValues: {
@@ -48,7 +29,23 @@ export default function SignInForm() {
       onSubmit: formSchema,
     },
     onSubmit: async ({ value }) => {
-      login(value);
+      try {
+        const result = await signIn("credentials", {
+          admno: value.admno,
+          password: value.password,
+          redirect: false,
+        });
+
+        if (result?.error === "invalid_credentials") {
+          toast.error("Invalid admission number or password");
+          return;
+        }
+
+        toast.success("Signed in successfully");
+        router.push("/");
+      } catch (err) {
+        toast.error(getErrorMessage(err));
+      }
     },
   });
 
@@ -133,9 +130,17 @@ export default function SignInForm() {
             }}
           </form.Field>
 
-          <Button type="submit" className="w-full h-10" disabled={isPending}>
-            {isPending ? "Signing in…" : "Sign In"}
-          </Button>
+          <form.Field name="admno">
+            {() => (
+              <Button
+                type="submit"
+                className="w-full h-10"
+                disabled={form.state.isSubmitting}
+              >
+                {form.state.isSubmitting ? "Signing in…" : "Sign In"}
+              </Button>
+            )}
+          </form.Field>
         </form>
 
         <div className="space-y-4">
