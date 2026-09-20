@@ -8,15 +8,32 @@ export default {
     extend: {
       colors: {
         brand: {
-          dark: '#25aae1', // Deep Slate/Navy (Hero Background)
-          primary: '#0f172a', // Darker Navy (Footer)
-          accent: '#0f172a', // Teal/Mint (Buttons - similar to the image)
-          light: '#f1f5f9', // Very light gray/blue for section backgrounds
-        }
+          // Existing aliases so other pages don't regress
+          dark: '#25aae1',
+          primary: '#0f172a',
+          accent: '#0f172a',
+          light: '#f1f5f9',
+
+          // Canonical DITA / Daystar brand tokens
+          blue: '#25aae1',
+          blueDeep: '#0e8fc4',
+          blueSoft: '#e8f6fd',
+          deep: '#003366',
+          navy: '#0f172a',
+          navyMid: '#1e293b',
+          navyInk: '#032540',
+          ink: '#1e293b',
+          muted: '#64748b',
+          line: '#e2e8f0',
+          surface: '#ffffff',
+          lightBg: '#f5f7fa',
+          gold: '#FFD700',
+        },
       },
       fontFamily: {
-        sans: ['Inter', 'sans-serif'], // Clean modern font like the image
-      }
+        sans: ['Inter', 'sans-serif'],
+        heading: ['Poppins', 'Inter', 'sans-serif'],
+      },
     },
   },
   plugins: [],
